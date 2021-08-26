@@ -64,6 +64,7 @@ bool IPBasedAnalyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pkt
 		return false;
 
 	bool is_orig = (tuple.src_addr == conn->OrigAddr()) && (tuple.src_port == conn->OrigPort());
+	pkt->is_orig = is_orig;
 
 	conn->CheckFlowLabel(is_orig, ip_hdr->FlowLabel());
 

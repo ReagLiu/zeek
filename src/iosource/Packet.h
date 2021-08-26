@@ -18,6 +18,7 @@ using pkt_timeval = struct timeval;
 #include "zeek/IP.h"
 #include "zeek/NetVar.h" // For BifEnum::Tunnel
 #include "zeek/TunnelEncapsulation.h"
+#include "zeek/session/Session.h"
 
 namespace zeek
 	{
@@ -166,29 +167,35 @@ public:
 	/**
 	 * (Outermost) VLAN tag if any, else 0.
 	 */
-	uint32_t vlan;
+	uint32_t vlan = 0;
 
 	/**
 	 * (Innermost) VLAN tag if any, else 0.
 	 */
-	uint32_t inner_vlan;
+	uint32_t inner_vlan = 0;
+
+	/**
+	 * If this packet is related to a connection, this flag denotes whether
+	 * this packet is from the originator of the connection.
+	 */
+	bool is_orig = false;
 
 	/**
 	 * Indicates whether the layer 2 checksum was validated by the
 	 * hardware/kernel before being received by zeek.
 	 */
-	bool l2_checksummed;
+	bool l2_checksummed = false;
 
 	/**
 	 * Indicates whether the layer 3 checksum was validated by the
 	 * hardware/kernel before being received by zeek.
 	 */
-	bool l3_checksummed;
+	bool l3_checksummed = false;
 
 	/**
 	 * Indicates whether this packet should be recorded.
 	 */
-	mutable bool dump_packet;
+	mutable bool dump_packet = false;
 
 	/**
 	 * Indicates the amount of data to be dumped. If only a header is needed,
@@ -240,6 +247,12 @@ public:
 	 * analyzer to the IPTunnel analyzer.
 	 */
 	int gre_link_type = DLT_RAW;
+
+	/**
+	 * The session related to this packet, if one exists. This is used for
+	 * handling encapsulations, and is only set by the UDP analyzer.
+	 */
+	session::Session* session = nullptr;
 
 private:
 	// Renders an MAC address into its ASCII representation.
