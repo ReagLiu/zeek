@@ -20,3 +20,4 @@
 @load base/packet-protocols/gre
 @load base/packet-protocols/iptunnel
 @load base/packet-protocols/ayiya
+@load base/packet-protocols/geneve
