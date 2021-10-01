@@ -186,12 +186,12 @@ function all_registered_ports(): table[Analyzer::Tag] of set[port]
 	return ports;
 	}
 
-function name(atype: Analyzer::Tag) : string
+function name(atype: AllAnalyzers::Tag) : string
 	{
 	return __name(atype);
 	}
 
-function get_tag(name: string): Analyzer::Tag
+function get_tag(name: string): AllAnalyzers::Tag
 	{
 	return __tag(name);
 	}
