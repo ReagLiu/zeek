@@ -116,6 +116,7 @@ void Analyzer::CtorInit(const zeek::Tag& arg_tag, Connection* arg_conn)
 	tag = arg_tag;
 	id = ++id_counter;
 	protocol_confirmed = false;
+	analyzer_confirmed = false;
 	timers_canceled = false;
 	skip = false;
 	finished = false;
@@ -226,7 +227,7 @@ void Analyzer::NextPacket(int len, const u_char* data, bool is_orig, uint64_t se
 			}
 		catch ( binpac::Exception const& e )
 			{
-			ProtocolViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+			AnalyzerViolation(util::fmt("Binpac exception: %s", e.c_msg()));
 			}
 		}
 	}
@@ -249,7 +250,7 @@ void Analyzer::NextStream(int len, const u_char* data, bool is_orig)
 			}
 		catch ( binpac::Exception const& e )
 			{
-			ProtocolViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+			AnalyzerViolation(util::fmt("Binpac exception: %s", e.c_msg()));
 			}
 		}
 	}
@@ -272,7 +273,7 @@ void Analyzer::NextUndelivered(uint64_t seq, int len, bool is_orig)
 			}
 		catch ( binpac::Exception const& e )
 			{
-			ProtocolViolation(util::fmt("Binpac exception: %s", e.c_msg()));
+			AnalyzerViolation(util::fmt("Binpac exception: %s", e.c_msg()));
 			}
 		}
 	}
@@ -710,6 +711,41 @@ void Analyzer::ProtocolViolation(const char* reason, const char* data, int len)
 
 	const auto& tval = tag.AsVal();
 	event_mgr.Enqueue(protocol_violation, ConnVal(), tval, val_mgr->Count(id), std::move(r));
+	}
+
+void Analyzer::AnalyzerConfirmation(zeek::Tag arg_tag)
+	{
+	if ( analyzer_confirmed )
+		return;
+
+	analyzer_confirmed = true;
+
+	if ( ! analyzer_confirmation )
+		return;
+
+	const auto& tval = arg_tag ? arg_tag.AsVal() : tag.AsVal();
+	event_mgr.Enqueue(analyzer_confirmation, ConnVal(), tval, val_mgr->Count(id));
+	}
+
+void Analyzer::AnalyzerViolation(const char* reason, const char* data, int len)
+	{
+	if ( ! analyzer_violation )
+		return;
+
+	StringValPtr r;
+
+	if ( data && len )
+		{
+		const char* tmp = util::copy_string(reason);
+		r = make_intrusive<StringVal>(util::fmt(
+			"%s [%s%s]", tmp, util::fmt_bytes(data, min(40, len)), len > 40 ? "..." : ""));
+		delete[] tmp;
+		}
+	else
+		r = make_intrusive<StringVal>(reason);
+
+	const auto& tval = tag.AsVal();
+	event_mgr.Enqueue(analyzer_violation, ConnVal(), tval, val_mgr->Count(id), std::move(r));
 	}
 
 void Analyzer::AddTimer(analyzer_timer_func timer, double t, bool do_expire,

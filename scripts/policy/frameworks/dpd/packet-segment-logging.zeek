@@ -27,3 +27,11 @@ event protocol_violation(c: connection, atype: Analyzer::Tag, aid: count,
 
 	c$dpd$packet_segment=fmt("%s", sub_bytes(get_current_packet()$data, 0, packet_segment_size));
 	}
+
+event analyzer_violation(c: connection, atype: AllAnalyzers::Tag, aid: count,
+                         reason: string) &priority=4
+	{
+	if ( ! c?$dpd ) return;
+
+	c$dpd$packet_segment=fmt("%s", sub_bytes(get_current_packet()$data, 0, packet_segment_size));
+	}

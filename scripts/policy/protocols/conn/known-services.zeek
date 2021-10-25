@@ -298,6 +298,11 @@ event protocol_confirmation(c: connection, atype: Analyzer::Tag, aid: count) &pr
 	known_services_done(c);
 	}
 
+event analyzer_confirmation(c: connection, atype: AllAnalyzers::Tag, aid: count) &priority=-5
+	{
+	known_services_done(c);
+	}
+
 # Handle the connection ending in case no protocol was ever detected.
 event connection_state_remove(c: connection) &priority=-5
 	{
