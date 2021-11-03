@@ -23,3 +23,4 @@
 @load base/packet-protocols/geneve
 @load base/packet-protocols/vxlan
 @load base/packet-protocols/teredo
+@load base/packet-protocols/gtpv1
