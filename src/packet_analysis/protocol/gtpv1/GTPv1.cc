@@ -91,13 +91,12 @@ bool GTPv1_Analyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pack
 		return false;
 		}
 
-	Packet inner_packet;
 	int encap_index = 0;
-	packet_analysis::IPTunnel::build_inner_packet(&inner_packet, packet, IPPROTO_IPV6, &encap_index,
-	                                              nullptr, len, data, DLT_RAW,
-	                                              BifEnum::Tunnel::GTPv1, GetAnalyzerTag());
+	auto inner_packet = packet_analysis::IPTunnel::build_inner_packet(
+		packet, &encap_index, nullptr, len, data, DLT_RAW,
+		BifEnum::Tunnel::GTPv1, GetAnalyzerTag());
 
-	return ForwardPacket(len, data, &inner_packet);
+	return ForwardPacket(len, data, inner_packet.get());
 	}
 
 	} // namespace zeek::packet_analysis::gtpv1

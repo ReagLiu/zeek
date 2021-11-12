@@ -52,18 +52,17 @@ bool AYIYAAnalyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* packe
 	len -= hdr_size;
 	data += hdr_size;
 
-	Packet inner_packet;
 	int encap_index = 0;
-	packet_analysis::IPTunnel::build_inner_packet(&inner_packet, packet, next_header, &encap_index,
-	                                              nullptr, len, data, DLT_RAW,
-	                                              BifEnum::Tunnel::AYIYA, GetAnalyzerTag());
+	auto inner_packet = packet_analysis::IPTunnel::build_inner_packet(
+		packet, &encap_index, nullptr, len, data, DLT_RAW,
+		BifEnum::Tunnel::AYIYA, GetAnalyzerTag());
 
 	AnalyzerConfirmation(packet->session);
 
 	// Skip the header and pass on to the next analyzer. It's possible for AYIYA to
 	// just be a header and nothing after it, so check for that case.
 	if ( len > hdr_size )
-		return ForwardPacket(len, data, &inner_packet, next_header);
+		return ForwardPacket(len, data, inner_packet.get(), next_header);
 
 	return true;
 	}

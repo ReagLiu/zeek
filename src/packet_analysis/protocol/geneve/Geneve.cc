@@ -59,17 +59,16 @@ bool GeneveAnalyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pack
 	len -= hdr_size;
 	data += hdr_size;
 
-	Packet inner_packet;
 	int encap_index = 0;
-	packet_analysis::IPTunnel::build_inner_packet(&inner_packet, packet, next_header, &encap_index,
-	                                              nullptr, len, data, DLT_RAW,
-	                                              BifEnum::Tunnel::GENEVE, GetAnalyzerTag());
+	auto inner_packet = packet_analysis::IPTunnel::build_inner_packet(
+		packet, &encap_index, nullptr, len, data, DLT_RAW,
+		BifEnum::Tunnel::GENEVE, GetAnalyzerTag());
 
 	// Skip the header and pass on to the next analyzer. It's possible for Geneve to
 	// just be a header and nothing after it, so check for that case.
 	bool fwd_ret_val = true;
 	if ( len > hdr_size )
-		fwd_ret_val = ForwardPacket(len, data, &inner_packet, next_header);
+		fwd_ret_val = ForwardPacket(len, data, inner_packet.get(), next_header);
 
 	if ( fwd_ret_val )
 		{
@@ -77,11 +76,11 @@ bool GeneveAnalyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pack
 
 		if ( geneve_packet && packet->session )
 			{
-			EncapsulatingConn* ec = inner_packet.encap->At(encap_index);
+			EncapsulatingConn* ec = inner_packet->encap->At(encap_index);
 			if ( ec && ec->ip_hdr )
-				inner_packet.session->EnqueueEvent(geneve_packet, nullptr,
-				                                   packet->session->GetVal(),
-				                                   ec->ip_hdr->ToPktHdrVal(), val_mgr->Count(vni));
+				inner_packet->session->EnqueueEvent(geneve_packet, nullptr,
+				                                    packet->session->GetVal(),
+				                                    ec->ip_hdr->ToPktHdrVal(), val_mgr->Count(vni));
 			}
 		}
 	else

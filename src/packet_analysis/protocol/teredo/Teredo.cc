@@ -258,13 +258,12 @@ bool TeredoAnalyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pack
 		                              teredo_hdr);
 		}
 
-	Packet inner_packet;
 	int encap_index = 0;
-	packet_analysis::IPTunnel::build_inner_packet(&inner_packet, packet, IPPROTO_IPV6, &encap_index,
-	                                              nullptr, len, te.InnerIP(), DLT_RAW,
-	                                              BifEnum::Tunnel::TEREDO, GetAnalyzerTag());
+	auto inner_packet = packet_analysis::IPTunnel::build_inner_packet(
+		packet, &encap_index, nullptr, len, te.InnerIP(), DLT_RAW,
+		BifEnum::Tunnel::TEREDO, GetAnalyzerTag());
 
-	return ForwardPacket(len, te.InnerIP(), &inner_packet);
+	return ForwardPacket(len, te.InnerIP(), inner_packet.get());
 	}
 
 bool TeredoAnalyzer::DetectProtocol(size_t len, const uint8_t* data, Packet* packet)

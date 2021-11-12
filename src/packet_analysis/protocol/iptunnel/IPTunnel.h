@@ -79,25 +79,28 @@ protected:
 	};
 
 /**
- * Utility function for packet analyzers for tunnel protocols. This builds a new
- * packet and sets up the encapsulation data based on the provided information.
+ * Utility function for packet analyzers for encapsulation/tunnel protocols. This
+ * builds a new packet object containing the encapsulated/tunneled packet, as well
+ * as adding to the associated encapsulation stack for the tunnel.
  *
- * TODO: Comments here
- * @param inner_pkt
- * @param outer_pkt
- * @param next_header
- * @param encap_index
- * @param encap_stack
- * @param len
- * @param data
- * @param link_type
- * @param tunnel_type
- * @param analyzer_tag
+ * @param outer_pkt The packet containing the encapsulation. This packet should contain
+ * @param encap_index A return value for the current index into the encapsulation stack.
+ * This is returned to allow analzyers to know what point in the stack they were operating
+ * on as the packet analysis chain unwinds as it returns.
+ * @param encap_stack Tracks the encapsulations as the new encapsulations are discovered
+ * in the inner packets.
+ * @param len The byte length of the packet data containing in the inner packet.
+ * @param data A pointer to the first byte of the inner packet.
+ * @param link_type The link type (DLT_*) for the outer packet. If not known, DLT_RAW can
+ * be passed for this value.
+ * @param tunnel_type The type of tunnel the inner packet is stored in.
+ * @param analyzer_tag The tag for the analyzer calling this method.
+ * return A new packet object describing the encapsulated packet and data.
  */
-extern void build_inner_packet(Packet* inner_pkt, Packet* outer_pkt, uint32_t next_header,
-                               int* encap_index, std::shared_ptr<EncapsulationStack> encap_stack,
-                               uint32_t len, const u_char* data, int link_type,
-                               BifEnum::Tunnel::Type tunnel_type, const Tag& analyzer_tag);
+extern std::unique_ptr<Packet> build_inner_packet(Packet* outer_pkt, int* encap_index,
+                                                  std::shared_ptr<EncapsulationStack> encap_stack,
+                                                  uint32_t len, const u_char* data, int link_type,
+                                                  BifEnum::Tunnel::Type tunnel_type, const Tag& analyzer_tag);
 
 namespace detail
 	{

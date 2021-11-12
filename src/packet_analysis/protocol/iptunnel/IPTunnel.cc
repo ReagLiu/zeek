@@ -171,14 +171,13 @@ bool IPTunnelAnalyzer::ProcessEncapsulatedPacket(double t, const Packet* pkt, ui
 	return return_val;
 	}
 
-void build_inner_packet(Packet* inner_pkt, Packet* outer_pkt, uint32_t next_header,
-                        int* encap_index, std::shared_ptr<EncapsulationStack> encap_stack,
-                        uint32_t len, const u_char* data, int link_type,
-                        BifEnum::Tunnel::Type tunnel_type, const Tag& analyzer_tag)
+std::unique_ptr<Packet> build_inner_packet(Packet* outer_pkt, int* encap_index,
+                                           std::shared_ptr<EncapsulationStack> encap_stack,
+                                           uint32_t len, const u_char* data, int link_type,
+                                           BifEnum::Tunnel::Type tunnel_type, const Tag& analyzer_tag)
 	{
-	// TODO: the other functions use the timestamp from the outer packet here if
-	// the packet is valid. Considering it should always be valid, why would they
-	// have ever used the timestamp time?
+	auto inner_pkt = std::make_unique<Packet>();
+
 	pkt_timeval ts;
 	ts.tv_sec = static_cast<time_t>(run_state::current_timestamp);
 	ts.tv_usec = static_cast<suseconds_t>(
@@ -199,10 +198,7 @@ void build_inner_packet(Packet* inner_pkt, Packet* outer_pkt, uint32_t next_head
 		*encap_index = outer_pkt->encap->Depth();
 		}
 
-	// TODO: not sure this is necessary or if it should be in the inner packet data instead
-	outer_pkt->proto = next_header;
-	outer_pkt->gre_version = -1;
-	outer_pkt->tunnel_type = tunnel_type;
+	return inner_pkt;
 	}
 
 namespace detail

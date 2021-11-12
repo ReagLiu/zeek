@@ -36,15 +36,13 @@ bool VXLAN_Analyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pack
 	len -= hdr_size;
 	data += hdr_size;
 
-	Packet inner_packet;
 	int encap_index = 0;
-	packet_analysis::IPTunnel::build_inner_packet(&inner_packet, packet, -1, &encap_index, nullptr,
-	                                              len, data, DLT_RAW, BifEnum::Tunnel::VXLAN,
-	                                              GetAnalyzerTag());
+	auto inner_packet = packet_analysis::IPTunnel::build_inner_packet(
+		packet, &encap_index, nullptr, len, data, DLT_RAW, BifEnum::Tunnel::VXLAN, GetAnalyzerTag());
 
 	bool fwd_ret_val = true;
 	if ( len > hdr_size )
-		fwd_ret_val = ForwardPacket(len, data, &inner_packet);
+		fwd_ret_val = ForwardPacket(len, data, inner_packet.get());
 
 	if ( fwd_ret_val )
 		{
@@ -52,10 +50,10 @@ bool VXLAN_Analyzer::AnalyzePacket(size_t len, const uint8_t* data, Packet* pack
 
 		if ( vxlan_packet && packet->session )
 			{
-			EncapsulatingConn* ec = inner_packet.encap->At(encap_index);
+			EncapsulatingConn* ec = inner_packet->encap->At(encap_index);
 			if ( ec && ec->ip_hdr )
-				inner_packet.session->EnqueueEvent(vxlan_packet, nullptr, packet->session->GetVal(),
-				                                   ec->ip_hdr->ToPktHdrVal(), val_mgr->Count(vni));
+				inner_packet->session->EnqueueEvent(vxlan_packet, nullptr, packet->session->GetVal(),
+				                                    ec->ip_hdr->ToPktHdrVal(), val_mgr->Count(vni));
 			}
 		}
 	else
