@@ -18,6 +18,7 @@
 #include "zeek/3rdparty/sqlite3.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT
+
 #include "zeek/3rdparty/doctest.h"
 #include "zeek/Anon.h"
 #include "zeek/DFA.h"
@@ -436,6 +437,8 @@ SetupResult setup(int argc, char** argv, Options* zopts)
 	if ( dns_type == DNS_DEFAULT && fake_dns() )
 		dns_type = DNS_FAKE;
 
+	dns_mgr = new DNS_Mgr(dns_type);
+
 	RETSIGTYPE (*oldhandler)(int);
 
 	zeek_script_prefixes = options.script_prefixes;
@@ -568,8 +571,6 @@ SetupResult setup(int argc, char** argv, Options* zopts)
 		add_input_file("base/frameworks/packet-filter/main.zeek");
 
 	push_scope(nullptr, nullptr);
-
-	dns_mgr = new DNS_Mgr(dns_type);
 
 	// It would nice if this were configurable.  This is similar to the
 	// chicken and the egg problem.  It would be configurable by parsing

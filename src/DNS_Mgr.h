@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <ares.h>
 #include <list>
 #include <map>
 #include <queue>
@@ -163,10 +164,13 @@ protected:
 	char* cache_name;
 	char* dir; // directory in which cache_name resides
 
-	bool did_init;
-	int asyncs_pending;
+	bool did_init = false;
+	int asyncs_pending = 0;
 
 	RecordTypePtr dm_rec;
+
+	ares_channel channel;
+	bool ipv6_resolver = false;
 
 	using CallbackList = std::list<LookupCallback*>;
 

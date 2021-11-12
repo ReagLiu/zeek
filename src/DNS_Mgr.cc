@@ -44,6 +44,8 @@ extern "C"
 	{
 	extern int select(int, fd_set*, fd_set*, fd_set*, struct timeval*);
 
+#include <ares.h>
+#include <ares_dns.h>
 #include <netdb.h>
 
 #include "zeek/3rdparty/nb_dns.h"
@@ -381,6 +383,9 @@ DNS_Mgr::DNS_Mgr(DNS_MgrMode arg_mode)
 	successful = 0;
 	failed = 0;
 	nb_dns = nullptr;
+	ipv6_resolver = false;
+
+	ares_library_init(ARES_LIB_INIT_ALL);
 	}
 
 DNS_Mgr::~DNS_Mgr()
@@ -388,8 +393,19 @@ DNS_Mgr::~DNS_Mgr()
 	if ( nb_dns )
 		nb_dns_finish(nb_dns);
 
+	ares_library_cleanup();
+
 	delete[] cache_name;
 	delete[] dir;
+	}
+
+static void ares_sock_cb(void* data, int s, int read, int write)
+	{
+	printf("Change state fd %d read:%d write:%d\n", s, read, write);
+	if ( read == 1 )
+		iosource_mgr->RegisterFd(s, reinterpret_cast<DNS_Mgr*>(data));
+	else
+		iosource_mgr->UnregisterFd(s, reinterpret_cast<DNS_Mgr*>(data));
 	}
 
 void DNS_Mgr::InitSource()
@@ -397,19 +413,38 @@ void DNS_Mgr::InitSource()
 	if ( did_init )
 		return;
 
+	ares_init(&channel);
+
+	ares_options options;
+	int optmask = 0;
+
+	options.flags = ARES_FLAG_STAYOPEN;
+	optmask |= ARES_OPT_FLAGS;
+
+	options.timeout = DNS_TIMEOUT;
+	optmask |= ARES_OPT_TIMEOUT;
+
+	options.sock_state_cb = ares_sock_cb;
+	options.sock_state_cb_data = this;
+	optmask |= ARES_OPT_SOCK_STATE_CB;
+
+	int status = ares_init_options(&channel, &options, optmask);
+	if ( status != ARES_SUCCESS )
+		reporter->FatalError("Failed to initialize c-ares for DNS resolution: %s\n",
+		                     ares_strerror(status));
+
 	// Note that Init() may be called by way of LookupHost() during the act of
 	// parsing a hostname literal (e.g. google.com), so we can't use a
 	// script-layer option to configure the DNS resolver as it may not be
 	// configured to the user's desired address at the time when we need to to
 	// the lookup.
 	auto dns_resolver = getenv("ZEEK_DNS_RESOLVER");
-	auto dns_resolver_addr = dns_resolver ? IPAddr(dns_resolver) : IPAddr();
-	char err[NB_DNS_ERRSIZE];
-
-	if ( dns_resolver_addr == IPAddr() )
-		nb_dns = nb_dns_init(err);
-	else
+	if ( dns_resolver )
 		{
+		ares_addr_node servers;
+		servers.next = nullptr;
+
+		auto dns_resolver_addr = IPAddr(dns_resolver);
 		struct sockaddr_storage ss = {0};
 
 		if ( dns_resolver_addr.GetFamily() == IPv4 )
@@ -417,25 +452,21 @@ void DNS_Mgr::InitSource()
 			struct sockaddr_in* sa = (struct sockaddr_in*)&ss;
 			sa->sin_family = AF_INET;
 			dns_resolver_addr.CopyIPv4(&sa->sin_addr);
+
+			servers.family = AF_INET;
+			memcpy(&(servers.addr.addr4), &sa->sin_addr, sizeof(struct in_addr));
 			}
 		else
 			{
 			struct sockaddr_in6* sa = (struct sockaddr_in6*)&ss;
 			sa->sin6_family = AF_INET6;
 			dns_resolver_addr.CopyIPv6(&sa->sin6_addr);
+
+			servers.family = AF_INET6;
+			memcpy(&(servers.addr.addr6), &sa->sin6_addr, sizeof(ares_in6_addr));
 			}
 
-		nb_dns = nb_dns_init2(err, (struct sockaddr*)&ss);
-		}
-
-	if ( nb_dns )
-		{
-		if ( ! iosource_mgr->RegisterFd(nb_dns_fd(nb_dns), this) )
-			reporter->FatalError("Failed to register nb_dns file descriptor with iosource_mgr");
-		}
-	else
-		{
-		reporter->Warning("problem initializing NB-DNS: %s", err);
+		ares_set_servers(channel, &servers);
 		}
 
 	did_init = true;
@@ -487,6 +518,7 @@ TableValPtr DNS_Mgr::LookupHost(const char* name)
 	if ( ! nb_dns )
 		return empty_addr_set();
 
+	// Check the cache before attempting to look up the name remotely.
 	if ( mode != DNS_PRIME )
 		{
 		HostMap::iterator it = host_mappings.find(name);
