@@ -112,14 +112,18 @@ public:
 
 	/**
 	 * Detects whether the protocol for an analyzer can be found in the packet
-	 * data. This can be used similarly to how DPD is used in the session
-	 * analysis tree.
+	 * data. Packet analyzers can overload this method to provide any sort of
+	 * pattern-matching or byte-value detection against the packet data to
+	 * determine whether the packet contains the analyzer's protocol. The
+	 * analyzer must also register for the detection in script-land using the
+	 * PacketAnalyzer::register_protocol_detection bif method.
 	 *
 	 * @param len The number of bytes passed in. As we move along the chain of
 	 * analyzers, this is the number of bytes we have left of the packet to
 	 * process.
 	 * @param data Pointer to the input to process.
 	 * @param packet Object that maintains the packet's meta data.
+	 * @return true if the protocol is detected in the packet data.
 	 */
 	virtual bool DetectProtocol(size_t len, const uint8_t* data, Packet* packet) { return false; }
 
@@ -127,7 +131,7 @@ public:
 	 * Signals Zeek's protocol detection that the analyzer has recognized
 	 * the input to indeed conform to the expected protocol. This should
 	 * be called as early as possible during a connection's life-time. It
-	 * may turn into \c protocol_confirmed event at the script-layer (but
+	 * may turn into \c analyzer_confirmed event at the script-layer (but
 	 * only once per analyzer for each connection, even if the method is
 	 * called multiple times).
 	 *
@@ -140,7 +144,7 @@ public:
 	 * Signals Bro's protocol detection that the analyzer has found a
 	 * severe protocol violation that could indicate that it's not
 	 * parsing the expected protocol. This turns into \c
-	 * protocol_violation events at the script-layer (one such event is
+	 * analyzer_violation events at the script-layer (one such event is
 	 * raised for each call to this method so that the script-layer can
 	 * built up a notion of how prevalent protocol violations are; the
 	 * more, the less likely it's the right protocol).

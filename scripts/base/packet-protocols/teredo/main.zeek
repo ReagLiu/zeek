@@ -1,6 +1,6 @@
 module PacketAnalyzer::TEREDO;
 
-# This needs to be loaded here so the function is available. Function BIFs normally aren't
+# This needs to be loaded here so the functions are available. Function BIFs normally aren't
 # loaded until after the packet analysis init scripts are run, and then zeek complains it
 # can't find the function.
 @load base/bif/plugins/Zeek_Teredo.functions.bif

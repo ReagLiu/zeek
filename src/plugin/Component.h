@@ -111,7 +111,7 @@ public:
 	void Describe(ODesc* d) const;
 
 	/**
-	 * Initializes tag by creating the unique tag value for thos componend.
+	 * Initializes tag by creating the unique tag value for this component.
 	 * Has to be called exactly once.
 	 */
 	void InitializeTag();
@@ -136,7 +136,7 @@ private:
 	std::string name;
 	std::string canon_name;
 
-	/** The automatically assigned analyzer tag */
+	/** The automatically assigned component tag */
 	zeek::Tag tag;
 	EnumTypePtr etype;
 	Tag::subtype_t tag_subtype;

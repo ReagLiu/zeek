@@ -249,8 +249,7 @@ public:
 	int gre_link_type = DLT_RAW;
 
 	/**
-	 * The session related to this packet, if one exists. This is used for
-	 * handling encapsulations, and is only set by the UDP analyzer.
+	 * The session related to this packet, if one exists.
 	 */
 	session::Session* session = nullptr;
 
