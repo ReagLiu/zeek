@@ -16,10 +16,5 @@ redef likely_server_ports += { vxlan_ports };
 
 event zeek_init() &priority=20
 	{
-	for ( p in vxlan_ports )
-		{
-		PacketAnalyzer::register_packet_analyzer(PacketAnalyzer::ANALYZER_UDP, port_to_count(p),
-		                                         PacketAnalyzer::ANALYZER_VXLAN);
-		Analyzer::add_port_to_table(PacketAnalyzer::ANALYZER_VXLAN, p);
-		}
+	PacketAnalyzer::register_for_ports(PacketAnalyzer::ANALYZER_UDP, PacketAnalyzer::ANALYZER_VXLAN, vxlan_ports);
 	}

@@ -15,10 +15,5 @@ event zeek_init() &priority=20
 	PacketAnalyzer::register_packet_analyzer(PacketAnalyzer::ANALYZER_AYIYA, IPPROTO_IPV4, PacketAnalyzer::ANALYZER_IP);
 	PacketAnalyzer::register_packet_analyzer(PacketAnalyzer::ANALYZER_AYIYA, IPPROTO_IPV6, PacketAnalyzer::ANALYZER_IP);
 
-	for ( p in ayiya_ports )
-		{
-		PacketAnalyzer::register_packet_analyzer(PacketAnalyzer::ANALYZER_UDP, port_to_count(p),
-		                                         PacketAnalyzer::ANALYZER_AYIYA);
-		Analyzer::add_port_to_table(PacketAnalyzer::ANALYZER_AYIYA, p);
-		}
+	PacketAnalyzer::register_for_ports(PacketAnalyzer::ANALYZER_UDP, PacketAnalyzer::ANALYZER_AYIYA, ayiya_ports);
 	}
