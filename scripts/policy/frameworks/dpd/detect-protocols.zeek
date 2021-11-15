@@ -198,27 +198,6 @@ hook finalize_protocol_detection(c: connection)
 	report_protocols(c);
 	}
 
-event protocol_confirmation(c: connection, atype: Analyzer::Tag, aid: count)
-	{
-	# Don't report anything running on a well-known port.
-	if ( c$id$resp_p in Analyzer::registered_ports(atype) )
-		return;
-
-	if ( c$id in conns )
-		{
-		local analyzers = conns[c$id];
-		add analyzers[atype];
-		}
-	else
-		{
-		conns[c$id] = set(atype);
-		Conn::register_removal_hook(c, finalize_protocol_detection);
-
-		local delay = min_interval(minimum_duration, check_interval);
-		schedule delay { ProtocolDetector::check_connection(c) };
-		}
-	}
-
 event analyzer_confirmation(c: connection, atype: AllAnalyzers::Tag, aid: count)
 	{
 	# Don't report anything running on a well-known port.
