@@ -4115,7 +4115,7 @@ RecordValPtr coerce_to_record(RecordTypePtr rt, Val* v, const std::vector<int>& 
 					rhs = std::move(new_val);
 				}
 			else if ( rhs_type->Tag() == TYPE_VECTOR && field_type->Tag() == TYPE_VECTOR &&
-			     rhs_type->AsVectorType()->IsUnspecifiedVector() )
+			          rhs_type->AsVectorType()->IsUnspecifiedVector() )
 				{
 				auto rhs_v = rhs->AsVectorVal();
 				if ( ! rhs_v->Concretize(field_type->Yield()) )
