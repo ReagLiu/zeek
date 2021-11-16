@@ -5065,7 +5065,7 @@ ValPtr ListExpr::InitVal(const zeek::Type* t, ValPtr aggr) const
 ValPtr ListExpr::AddSetInit(const zeek::Type* t, ValPtr aggr) const
 	{
 	if ( aggr->GetType()->Tag() != TYPE_TABLE )
-		Internal("bad aggregate in ListExpr::InitVal");
+		Internal("bad aggregate in ListExpr::AddSetInit");
 
 	TableVal* tv = aggr->AsTableVal();
 	const TableType* tt = tv->GetType()->AsTableType();
